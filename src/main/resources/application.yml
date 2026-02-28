@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: expense-splitter
+
+server:
+  port: 8080
+
+# OpenAPI/Swagger configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Actuator endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# Application info
+info:
+  app:
+    name: Expense Splitter API
+    description: REST API for managing shared expenses and calculating settlements
+    version: 1.0.0

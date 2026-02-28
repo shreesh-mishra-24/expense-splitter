@@ -1,6 +1,6 @@
 # Expense Splitter API
 
-A REST API for managing shared expenses among groups of people, calculating balances, and generating optimized settlement plans.
+A REST API built with Java and Spring Boot for managing shared expenses among groups of people, calculating balances, and generating optimized settlement plans.
 
 ## Features
 
@@ -20,36 +20,64 @@ Given the following transactions:
 Instead of three separate repayments, the API simplifies this to:
 - **C pays A $30** (single transaction settles all balances)
 
+## Technology Stack
+
+- **Java 17**
+- **Spring Boot 3.2**
+- **Maven** for build management
+- **JUnit 5** for testing
+- **SpringDoc OpenAPI** for API documentation
+- **Docker** for containerization
+- **Lombok** for reducing boilerplate
+
 ## Project Structure
 
 ```
 expense-splitter/
-├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application entry point
-│   ├── api/
-│   │   ├── __init__.py
-│   │   ├── dependencies.py  # Dependency injection
-│   │   └── routes.py        # REST API endpoints
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── schemas.py       # Pydantic models for validation
-│   └── services/
-│       ├── __init__.py
-│       ├── balance_calculator.py  # Balance calculation logic
-│       ├── debt_simplifier.py     # Debt simplification algorithm
-│       └── group_service.py       # Group/member/expense management
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py                 # Test fixtures
-│   ├── test_api_integration.py     # API integration tests
-│   ├── test_balance_calculator.py  # Balance calculator unit tests
-│   ├── test_debt_simplifier.py     # Debt simplifier unit tests
-│   └── test_group_service.py       # Group service unit tests
+├── src/
+│   ├── main/
+│   │   ├── java/com/expensesplitter/
+│   │   │   ├── ExpenseSplitterApplication.java  # Main entry point
+│   │   │   ├── config/
+│   │   │   │   └── OpenApiConfig.java           # Swagger configuration
+│   │   │   ├── controller/
+│   │   │   │   ├── GroupController.java         # REST API endpoints
+│   │   │   │   └── HealthController.java        # Health check endpoints
+│   │   │   ├── dto/                             # Data Transfer Objects
+│   │   │   │   ├── GroupCreateRequest.java
+│   │   │   │   ├── MemberCreateRequest.java
+│   │   │   │   ├── ExpenseCreateRequest.java
+│   │   │   │   ├── BalanceResponse.java
+│   │   │   │   ├── SettlementResponse.java
+│   │   │   │   └── SettlementPlanResponse.java
+│   │   │   ├── exception/                       # Exception handling
+│   │   │   │   ├── GlobalExceptionHandler.java
+│   │   │   │   ├── ResourceNotFoundException.java
+│   │   │   │   └── InvalidOperationException.java
+│   │   │   ├── model/                           # Domain models
+│   │   │   │   ├── Group.java
+│   │   │   │   ├── Member.java
+│   │   │   │   └── Expense.java
+│   │   │   ├── repository/
+│   │   │   │   └── GroupRepository.java         # In-memory storage
+│   │   │   └── service/                         # Business logic
+│   │   │       ├── GroupService.java
+│   │   │       ├── BalanceCalculator.java
+│   │   │       └── DebtSimplifier.java
+│   │   └── resources/
+│   │       └── application.yml                  # Configuration
+│   └── test/java/com/expensesplitter/
+│       ├── ExpenseSplitterApplicationTest.java
+│       ├── service/                             # Unit tests
+│       │   ├── BalanceCalculatorTest.java
+│       │   ├── DebtSimplifierTest.java
+│       │   └── GroupServiceTest.java
+│       └── integration/                         # Integration tests
+│           └── GroupControllerIntegrationTest.java
+├── pom.xml
 ├── Dockerfile
 ├── Dockerfile.test
 ├── docker-compose.yml
-├── requirements.txt
 └── README.md
 ```
 
@@ -61,23 +89,26 @@ expense-splitter/
 # Build and run the container
 docker-compose up --build
 
-# The API will be available at http://localhost:8000
+# The API will be available at http://localhost:8080
 ```
 
 ### Option 2: Local Development
 
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+Prerequisites:
+- Java 17 or higher
+- Maven 3.8+
 
-# Install dependencies
-pip install -r requirements.txt
+```bash
+# Build the project
+mvn clean package
 
 # Run the application
-uvicorn app.main:app --reload
+mvn spring-boot:run
 
-# The API will be available at http://localhost:8000
+# Or run the JAR directly
+java -jar target/expense-splitter-1.0.0.jar
+
+# The API will be available at http://localhost:8080
 ```
 
 ## Running Tests
@@ -93,21 +124,23 @@ docker-compose --profile test run test
 
 ```bash
 # Run all tests
-pytest -v
+mvn test
 
-# Run with coverage
-pytest -v --cov=app --cov-report=html
+# Run tests with verbose output
+mvn test -Dtest=BalanceCalculatorTest
 
-# Run specific test file
-pytest tests/test_debt_simplifier.py -v
+# Run specific test class
+mvn test -Dtest=DebtSimplifierTest
+
+# Run integration tests only
+mvn test -Dtest=GroupControllerIntegrationTest
 ```
 
 ## API Documentation
 
 Once the application is running, visit:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **OpenAPI JSON**: http://localhost:8000/openapi.json
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/api-docs
 
 ## API Endpoints
 
@@ -117,40 +150,40 @@ Once the application is running, visit:
 |--------|----------|-------------|
 | POST | `/api/v1/groups` | Create a new group |
 | GET | `/api/v1/groups` | Get all groups |
-| GET | `/api/v1/groups/{group_id}` | Get a specific group |
-| DELETE | `/api/v1/groups/{group_id}` | Delete a group |
+| GET | `/api/v1/groups/{groupId}` | Get a specific group |
+| DELETE | `/api/v1/groups/{groupId}` | Delete a group |
 
 ### Members
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/groups/{group_id}/members` | Add a member to a group |
-| GET | `/api/v1/groups/{group_id}/members` | Get all members in a group |
-| GET | `/api/v1/groups/{group_id}/members/{member_id}` | Get a specific member |
-| DELETE | `/api/v1/groups/{group_id}/members/{member_id}` | Remove a member |
+| POST | `/api/v1/groups/{groupId}/members` | Add a member to a group |
+| GET | `/api/v1/groups/{groupId}/members` | Get all members in a group |
+| GET | `/api/v1/groups/{groupId}/members/{memberId}` | Get a specific member |
+| DELETE | `/api/v1/groups/{groupId}/members/{memberId}` | Remove a member |
 
 ### Expenses
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/groups/{group_id}/expenses` | Add an expense |
-| GET | `/api/v1/groups/{group_id}/expenses` | Get all expenses in a group |
-| GET | `/api/v1/groups/{group_id}/expenses/{expense_id}` | Get a specific expense |
-| DELETE | `/api/v1/groups/{group_id}/expenses/{expense_id}` | Delete an expense |
+| POST | `/api/v1/groups/{groupId}/expenses` | Add an expense |
+| GET | `/api/v1/groups/{groupId}/expenses` | Get all expenses in a group |
+| GET | `/api/v1/groups/{groupId}/expenses/{expenseId}` | Get a specific expense |
+| DELETE | `/api/v1/groups/{groupId}/expenses/{expenseId}` | Delete an expense |
 
 ### Balances & Settlements
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/groups/{group_id}/balances` | Get balances for all members |
-| GET | `/api/v1/groups/{group_id}/settlements` | Get optimized settlement plan |
+| GET | `/api/v1/groups/{groupId}/balances` | Get balances for all members |
+| GET | `/api/v1/groups/{groupId}/settlements` | Get optimized settlement plan |
 
 ## Usage Example
 
 ### 1. Create a Group
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/groups \
+curl -X POST http://localhost:8080/api/v1/groups \
   -H "Content-Type: application/json" \
   -d '{"name": "Bangkok Trip"}'
 ```
@@ -162,7 +195,7 @@ Response:
   "name": "Bangkok Trip",
   "members": [],
   "expenses": [],
-  "created_at": "2024-01-15T10:00:00"
+  "createdAt": "2024-01-15T10:00:00"
 }
 ```
 
@@ -170,17 +203,17 @@ Response:
 
 ```bash
 # Add Alice
-curl -X POST http://localhost:8000/api/v1/groups/{group_id}/members \
+curl -X POST http://localhost:8080/api/v1/groups/{groupId}/members \
   -H "Content-Type: application/json" \
   -d '{"name": "Alice"}'
 
 # Add Bob
-curl -X POST http://localhost:8000/api/v1/groups/{group_id}/members \
+curl -X POST http://localhost:8080/api/v1/groups/{groupId}/members \
   -H "Content-Type: application/json" \
   -d '{"name": "Bob"}'
 
 # Add Charlie
-curl -X POST http://localhost:8000/api/v1/groups/{group_id}/members \
+curl -X POST http://localhost:8080/api/v1/groups/{groupId}/members \
   -H "Content-Type: application/json" \
   -d '{"name": "Charlie"}'
 ```
@@ -189,55 +222,55 @@ curl -X POST http://localhost:8000/api/v1/groups/{group_id}/members \
 
 ```bash
 # Alice pays $60 for dinner (everyone participates)
-curl -X POST http://localhost:8000/api/v1/groups/{group_id}/expenses \
+curl -X POST http://localhost:8080/api/v1/groups/{groupId}/expenses \
   -H "Content-Type: application/json" \
   -d '{
     "description": "Dinner at Thai restaurant",
-    "amount": 60.0,
-    "payer_id": "{alice_id}",
-    "participant_ids": ["{alice_id}", "{bob_id}", "{charlie_id}"]
+    "amount": 60.00,
+    "payerId": "{aliceId}",
+    "participantIds": ["{aliceId}", "{bobId}", "{charlieId}"]
   }'
 
 # Bob pays $30 for taxi (Bob and Charlie only)
-curl -X POST http://localhost:8000/api/v1/groups/{group_id}/expenses \
+curl -X POST http://localhost:8080/api/v1/groups/{groupId}/expenses \
   -H "Content-Type: application/json" \
   -d '{
     "description": "Taxi to hotel",
-    "amount": 30.0,
-    "payer_id": "{bob_id}",
-    "participant_ids": ["{bob_id}", "{charlie_id}"]
+    "amount": 30.00,
+    "payerId": "{bobId}",
+    "participantIds": ["{bobId}", "{charlieId}"]
   }'
 ```
 
 ### 4. Check Balances
 
 ```bash
-curl http://localhost:8000/api/v1/groups/{group_id}/balances
+curl http://localhost:8080/api/v1/groups/{groupId}/balances
 ```
 
 Response:
 ```json
 [
   {
-    "member_id": "...",
-    "member_name": "Alice",
-    "total_paid": 60.0,
-    "total_owed": 20.0,
-    "net_balance": 40.0
+    "memberId": "...",
+    "memberName": "Alice",
+    "totalPaid": 60.00,
+    "totalOwed": 20.00,
+    "netBalance": 40.00
   },
   {
-    "member_id": "...",
-    "member_name": "Bob",
-    "total_paid": 30.0,
-    "total_owed": 35.0,
-    "net_balance": -5.0
+    "memberId": "...",
+    "memberName": "Bob",
+    "totalPaid": 30.00,
+    "totalOwed": 35.00,
+    "netBalance": -5.00
   },
   {
-    "member_id": "...",
-    "member_name": "Charlie",
-    "total_paid": 0.0,
-    "total_owed": 35.0,
-    "net_balance": -35.0
+    "memberId": "...",
+    "memberName": "Charlie",
+    "totalPaid": 0.00,
+    "totalOwed": 35.00,
+    "netBalance": -35.00
   }
 ]
 ```
@@ -245,31 +278,31 @@ Response:
 ### 5. Get Optimized Settlements
 
 ```bash
-curl http://localhost:8000/api/v1/groups/{group_id}/settlements
+curl http://localhost:8080/api/v1/groups/{groupId}/settlements
 ```
 
 Response:
 ```json
 {
-  "group_id": "...",
-  "group_name": "Bangkok Trip",
+  "groupId": "...",
+  "groupName": "Bangkok Trip",
   "settlements": [
     {
-      "from_member_id": "...",
-      "from_member_name": "Charlie",
-      "to_member_id": "...",
-      "to_member_name": "Alice",
-      "amount": 35.0
+      "fromMemberId": "...",
+      "fromMemberName": "Charlie",
+      "toMemberId": "...",
+      "toMemberName": "Alice",
+      "amount": 35.00
     },
     {
-      "from_member_id": "...",
-      "from_member_name": "Bob",
-      "to_member_id": "...",
-      "to_member_name": "Alice",
-      "amount": 5.0
+      "fromMemberId": "...",
+      "fromMemberName": "Bob",
+      "toMemberId": "...",
+      "toMemberName": "Alice",
+      "amount": 5.00
     }
   ],
-  "total_transactions": 2
+  "totalTransactions": 2
 }
 ```
 
@@ -277,9 +310,10 @@ Response:
 
 ### Architecture
 
+- **Layered Architecture**: Clear separation between Controller, Service, and Repository layers
 - **Service Layer Pattern**: Business logic is separated into dedicated services (`BalanceCalculator`, `DebtSimplifier`, `GroupService`)
-- **Dependency Injection**: FastAPI's dependency injection is used for clean, testable code
-- **Pydantic Models**: Strong typing and validation using Pydantic v2
+- **Dependency Injection**: Spring's DI for clean, testable code
+- **DTO Pattern**: Separate request/response objects from domain models
 
 ### Debt Simplification Algorithm
 
@@ -295,30 +329,30 @@ This approach minimizes the number of transactions while ensuring all balances a
 
 ### Data Storage
 
-Currently uses in-memory storage for simplicity. The `GroupService` can be easily extended to use a database by:
-1. Creating a repository interface
-2. Implementing database-specific repositories
-3. Injecting the repository into the service
-
-## Technology Stack
-
-- **Python 3.11+**
-- **FastAPI**: Modern, fast web framework
-- **Pydantic**: Data validation and serialization
-- **Uvicorn**: ASGI server
-- **pytest**: Testing framework
-- **Docker**: Containerization
+Currently uses in-memory storage (`ConcurrentHashMap`) for simplicity. The `GroupRepository` can be easily replaced with a JPA repository for database persistence by:
+1. Adding `@Entity` annotations to domain models
+2. Creating a JPA interface extending `JpaRepository`
+3. Injecting the JPA repository
 
 ## Health Check
 
 ```bash
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 ```
 
 Response:
 ```json
 {"status": "healthy"}
 ```
+
+## Configuration
+
+The application can be configured via `application.yml` or environment variables:
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `server.port` | 8080 | Server port |
+| `spring.application.name` | expense-splitter | Application name |
 
 ## License
 
